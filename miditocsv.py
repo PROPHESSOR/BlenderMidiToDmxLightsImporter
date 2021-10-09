@@ -1,46 +1,52 @@
 import csv
 from mido import MidiFile, tick2second, tempo2bpm
 
-FILENAME = "In The End5.mid"
+FILENAME = "In The End0.mid"
 FPS = 30
 
-mid = MidiFile(FILENAME)
+mid = MidiFile(FILENAME, clip=True)
 
-for i, track in enumerate(mid.tracks):
-    print(i, track.name, len(track), 'events')
+while True:
+    for i, track in enumerate(mid.tracks):
+        print(i, track.name, len(track), 'events')
 
-track = int(input('>>> '))
-assert(track >= 0 and track < len(mid.tracks))
+    track = int(input('>>> '))
+    assert(track >= 0 and track < len(mid.tracks))
 
-tempo_ms = None
+    note = int(input('Note (36=C2) >>> '))
+    assert(note >= 0 and note < 128)
 
-for event in mid.tracks[0]:
-    if event.type == 'set_tempo':
-        tempo_ms = event.tempo
-        break
+    tempo_ms = None
 
-print('BPM:', round(tempo2bpm(tempo_ms)))
+    for event in mid.tracks[0]:
+        if event.type == 'set_tempo':
+            tempo_ms = event.tempo
+            break
 
-export = []
+    print('BPM:', round(tempo2bpm(tempo_ms)))
 
-time = 0
-prevvelocity = None
+    export = []
 
-for event in mid.tracks[track]:
-    time += event.time
-    if not event.type in ('note_on', 'note_off)'): continue
+    time = 0
+    prevvelocity = None
 
-    if prevvelocity == event.velocity: continue
-    prevvelocity = event.velocity
+    for event in mid.tracks[track]:
+        time += event.time
+        if not event.type in ('note_on', 'note_off)'): continue
 
-    time_sec = tick2second(time, mid.ticks_per_beat, tempo_ms)
+        if event.note != note: continue
 
-    frame = time_sec * FPS
+        #if prevvelocity == event.velocity: continue
+        #prevvelocity = event.velocity
 
-    export.append((round(frame), event.velocity))
+        time_sec = tick2second(time, mid.ticks_per_beat, tempo_ms)
 
-with open(f'{FILENAME}_{track}.csv', 'w') as _out:
-    writer = csv.writer(_out)
+        frame = time_sec * FPS
 
-    for row in export:
-        writer.writerow(row)
+        export.append((round(frame), event.velocity))
+
+    with open(f'{FILENAME}_{track}_{note}.csv', 'w') as _out:
+        writer = csv.writer(_out)
+
+        for row in export:
+            writer.writerow(row)
