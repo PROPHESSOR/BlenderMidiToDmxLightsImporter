@@ -1,0 +1,6 @@
+*.csv
+*.json
+*.mid
+blenderscript/__pycache__
+__pycache__
+*/*/__pycache__
