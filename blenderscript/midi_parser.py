@@ -54,17 +54,19 @@ class MidiLightParser:
 
         for event in track:
             time += event.time
-            if not event.type in ('note_on', 'note_off)'): continue
+
+            if not event.type in ('note_on', 'note_off'): continue
 
             if event.note != note: continue
 
-            time_sec = tick2second(time, self.ticks_per_beat, tempo_ms)
+            time_sec = tick2second(time, self.ticks_per_beat, self.tempo_ms)
 
             frame = time_sec * FPS
 
             if event.note == note:
-                export.append((round(frame), event.velocity))
-                break
+                export.append((round(frame), event.velocity / 128))
+
+        return export
 
 
 # for i, track in enumerate(mid.tracks):

@@ -109,6 +109,17 @@ class PRO_MLI_Import(bpy.types.Operator):
     bl_label = 'scene.pro_mli_import'
 
     def execute(self, context):
+        config: PRO_MLI_CONFIG = bpy.data.scenes[0].CONFIG_PRO_MLI
+
+        base_note = min(config.config.track_notes)
+
+        dim = config.config.midiReader.parse(config.track_id, base_note)
+        red = config.config.midiReader.parse(config.track_id, base_note + 1)
+        green = config.config.midiReader.parse(config.track_id, base_note + 2)
+        blue = config.config.midiReader.parse(config.track_id, base_note + 3)
+
+        print('dim', len(dim), 'red', len(red), 'green', len(green), 'blue', len(blue))
+
         return {'FINISHED'}
 
 class SCENE_PT_PRO_MLI_Panel(bpy.types.Panel):
@@ -150,8 +161,7 @@ class SCENE_PT_PRO_MLI_Panel(bpy.types.Panel):
 
     def drawChannelsSection(self, window, config: PRO_MLI_CONFIG):
         notes = config.config.track_notes
-        print('Notes', notes)
-        if not notes: return
+
         base_note = min(notes)
 
         channelsrow = window.column()
