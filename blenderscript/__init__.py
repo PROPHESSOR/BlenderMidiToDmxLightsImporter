@@ -104,6 +104,99 @@ class PRO_MLI_Reset(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class ActionAccessor:
+
+    @staticmethod
+    def create(name):
+        return bpy.data.actions.new(name)
+
+    @staticmethod
+    def get(name):
+        return bpy.data.actions[name]
+
+    @staticmethod
+    def exists(name):
+        return name in bpy.data.actions
+
+    @classmethod
+    def get_or_create(cls, name):
+
+        if cls.exists(name):
+            return cls.get(name)
+        else:
+            return cls.create(name)
+
+class FCurveAccessor:
+
+    @classmethod
+    def create(cls, action, path_name, index, *args):
+
+        fcurve = cls.get(action, path_name, index)
+        if fcurve == None:
+            return action.fcurves.new(path_name, index, *args)
+        else:
+            action.fcurves.remove(fcurve)
+            return fcurve
+
+    @staticmethod
+    def get(action, path_name, index):
+
+        for fcurve in action.fcurves:
+            if fcurve.data_path == path_name and fcurve.array_index == index:
+                return fcurve
+
+        return None
+
+    @classmethod
+    def exists(cls, action, path_name, index):
+        return not cls.get(action, path_name, index) == None
+
+    @classmethod
+    def get_or_create(cls, action, path_name, index, *args):
+
+        fcurve = cls.get(action, path_name, index)
+        if fcurve == None:
+            if len(args)>0:
+                return action.fcurves.new(data_path=path_name, index=index, action_group = args[0])
+            else:
+                return action.fcurves.new(data_path=path_name, index=index)
+        else:
+            return fcurve
+
+class ActionFCurveAccessor:
+
+    def __init__(self, anim_obj):
+        # assume: anim_obj can be any instance that has animation_data system,
+        # including objects, materials, textures, anything that can add animation.
+        self.anim_obj = anim_obj
+
+    def create_action(self, name):
+        action = ActionAccessor.create(name)
+        self.__set_action_to_object(action)
+        return action
+
+    def get_or_create_action(self, name):
+        action = ActionAccessor.get_or_create(name)
+        self.__set_action_to_object(action)
+        return action
+
+    def __set_action_to_object(self, action):
+
+        if self.anim_obj.animation_data == None:
+            self.anim_obj.animation_data_create()
+
+        if not self.anim_obj.animation_data.action == action:
+            self.anim_obj.animation_data.action = action
+
+        return action
+
+    def create_fcurve(self, path_name, index, *args):
+        return FCurveAccessor.create(self.anim_obj.animation_data.action, path_name, index, *args)
+
+    def get_or_create_fcurve(self, path_name, index, *args):
+        return FCurveAccessor.get_or_create(self.anim_obj.animation_data.action, path_name, index, *args)
+
+
 class PRO_MLI_Import(bpy.types.Operator):
     bl_idname = 'scene.pro_mli_import'
     bl_label = 'scene.pro_mli_import'
@@ -120,7 +213,35 @@ class PRO_MLI_Import(bpy.types.Operator):
 
         print('dim', len(dim), 'red', len(red), 'green', len(green), 'blue', len(blue))
 
+        activeObject = bpy.context.active_object
+
+        if activeObject.type != 'LIGHT':
+            raise Exception('Select a light')
+
+        accessor = ActionFCurveAccessor(activeObject.data)
+
+        action_name = f'Light_{config.track_id}_{base_note}'
+
+        self.addCurve(accessor, '["power"]', 0, dim, action_name)
+        self.addCurve(accessor, 'color', 0, red, action_name)
+        self.addCurve(accessor, 'color', 1, green, action_name)
+        self.addCurve(accessor, 'color', 2, blue, action_name)
+
         return {'FINISHED'}
+
+    def addCurve(self, accessor, path, index, points, name):
+        accessor.get_or_create_action(name)
+        curve = accessor.get_or_create_fcurve(path, index)
+
+        for point in points:
+            self.addCurvePoint(curve, point[0], point[1])
+
+    def addCurvePoint(self, curve, frame, value):
+        if not curve:
+            raise Exception("Curve is not defined")
+
+        curve.keyframe_points.insert(frame, value)
+
 
 class SCENE_PT_PRO_MLI_Panel(bpy.types.Panel):
     bl_label = "PRO: MIDI Lights Importer"
