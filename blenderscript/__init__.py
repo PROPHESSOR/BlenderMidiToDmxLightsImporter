@@ -56,8 +56,9 @@ class PRO_MTL_CFG:
 
 class PRO_MLI_CONFIG(bpy.types.PropertyGroup):
     # props
-    file = bpy.props.StringProperty(default="/home/prophessor/tmp/reaperlightsmiditoblender/In The End6.mid", subtype='FILE_PATH', description="Select a .json file, then click \"Add\" button below and you'll see a configuration box created.")
+    file = bpy.props.StringProperty(default="", subtype='FILE_PATH', description="Select a .json file, then click \"Add\" button below and you'll see a configuration box created.")
     track_id = bpy.props.IntProperty(name='Track ID', default=1, min=0, max=512, description='')
+    use_drivers = bpy.props.BoolProperty(name='Use Drivers', default=True, description='Use custom properties and drivers to map variable parameters (such as light energy) instead of hardcoding them')
 
     config = PRO_MTL_CFG()
 
@@ -98,6 +99,7 @@ class PRO_MLI_Reset(bpy.types.Operator):
 
         config.property_unset('file')
         config.property_unset('track_id')
+        config.property_unset('use_drivers')
         config.config.selected_track = False
         config.config.midiReader = None
         # config.midiReader = MidiLightParser()
@@ -222,7 +224,12 @@ class PRO_MLI_Import(bpy.types.Operator):
 
         action_name = f'Light_{config.track_id}_{base_note}'
 
-        self.addCurve(accessor, '["power"]', 0, dim, action_name)
+        if config.use_drivers:
+            accessor.anim_obj['power'] = 1.0
+            self.addCurve(accessor, '["power"]', 0, dim, action_name)
+        else:
+            self.addCurve(accessor, 'energy', 0, dim * 1000, action_name)
+
         self.addCurve(accessor, 'color', 0, red, action_name)
         self.addCurve(accessor, 'color', 1, green, action_name)
         self.addCurve(accessor, 'color', 2, blue, action_name)
@@ -288,6 +295,8 @@ class SCENE_PT_PRO_MLI_Panel(bpy.types.Panel):
         channelsrow = window.column()
         channelsrow.label(text=f'The track uses {len(notes)} channels')
         channelsrow.label(text=f'Base note is {base_note}')
+
+        channelsrow.prop(config, 'use_drivers')
 
         if len(notes) != 4:
             channelsrow.label(text='NOT IMPLEMENTED')
