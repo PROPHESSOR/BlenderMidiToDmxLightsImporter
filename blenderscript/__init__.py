@@ -242,7 +242,7 @@ class PRO_MLI_Import(bpy.types.Operator):
         action_name = f'Light_{config.track_id}_{base_note}'
 
         if config.use_drivers:
-            accessor.anim_obj['power'] = 1.0
+            accessor.anim_obj['power'] = 0.0
             self.addCurve(accessor, '["power"]', 0, dim, action_name)
         else:
             self.addCurve(accessor, 'energy', 0, dim * 1000, action_name)
@@ -266,7 +266,7 @@ class PRO_MLI_Import(bpy.types.Operator):
 
         curve.keyframe_points.insert(frame, value)
 
-        kf = curve.keyframe_points[-1].interpolation = 'CONSTANT'
+        curve.keyframe_points[-1].interpolation = 'CONSTANT'
 
 
 class SCENE_PT_PRO_MLI_Panel(bpy.types.Panel):
