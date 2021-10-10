@@ -266,6 +266,8 @@ class PRO_MLI_Import(bpy.types.Operator):
 
         curve.keyframe_points.insert(frame, value)
 
+        kf = curve.keyframe_points[-1].interpolation = 'CONSTANT'
+
 
 class SCENE_PT_PRO_MLI_Panel(bpy.types.Panel):
     bl_label = "PRO: MIDI Lights Importer"
