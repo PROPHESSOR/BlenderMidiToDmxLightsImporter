@@ -1,7 +1,12 @@
 import csv
+import sys
 from mido import MidiFile, tick2second, tempo2bpm
 
-FILENAME = "In The End0.mid"
+if len(sys.argv) < 2:
+    print('Usage: <path/to/file.mid>')
+    exit()
+
+FILENAME = sys.argv[1]
 FPS = 30
 
 mid = MidiFile(FILENAME, clip=True)
