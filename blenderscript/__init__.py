@@ -72,9 +72,15 @@ class PRO_MLI_LoadFile(bpy.types.Operator):
 
         config.config.midiReader = MidiLightParser()
 
-        config.config.midiReader.load(config.file)
+        config.config.midiReader.load(self.getPath(config.file))
 
         return {'FINISHED'}
+
+    def getPath(self, path):
+        if path[0:2] == "//":
+            return bpy.path.abspath(path)
+        else:
+            return path
 
 class PRO_MLI_SelectTrack(bpy.types.Operator):
     bl_idname = 'scene.pro_mli_selecttrack'
@@ -103,6 +109,17 @@ class PRO_MLI_Reset(bpy.types.Operator):
         config.config.selected_track = False
         config.config.midiReader = None
         # config.midiReader = MidiLightParser()
+
+        return {'FINISHED'}
+
+class PRO_MLI_Back(bpy.types.Operator):
+    bl_idname = 'scene.pro_mli_back'
+    bl_label = 'scene.pro_mli_back'
+
+    def execute(self, context):
+        config: PRO_MLI_CONFIG = bpy.data.scenes[0].CONFIG_PRO_MLI
+
+        config.config.selected_track = False
 
         return {'FINISHED'}
 
@@ -303,6 +320,8 @@ class SCENE_PT_PRO_MLI_Panel(bpy.types.Panel):
             channelsrow.label(text='Implemented only 4-channels DRGB lights')
         else:
             window.operator("scene.pro_mli_import", icon="NONE", text="Import")
+
+        window.operator("scene.pro_mli_back", icon="NONE", text="Back")
 
 classes = (
     PRO_MLI_LoadFile,
